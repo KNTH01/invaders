@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{cmp::min, time::Duration};
 
 use crate::{
     frame::{Drawable, Frame},
@@ -8,12 +8,14 @@ use crate::{
 };
 
 pub const MAX_SHOTS: usize = 3;
-pub const MAX_AMMO: u32 = 100;
+pub const MAX_AMMO: u32 = 5;
+pub const AMMO_RELOAD: u32 = 2;
 
 pub struct Player {
     x: usize,
     y: usize,
     shots: Vec<Shot>,
+    pub count_ammo: u32,
     pub count_shot: u32,
 }
 
@@ -29,6 +31,7 @@ impl Player {
             x: NUM_COLS / 2,
             y: NUM_ROWS - 1,
             shots: vec![],
+            count_ammo: MAX_AMMO,
             count_shot: 0,
         }
     }
@@ -45,9 +48,12 @@ impl Player {
     }
 
     pub fn shoot(&mut self) -> bool {
-        if self.shots.len() < MAX_SHOTS && self.count_shot < MAX_AMMO {
+        if self.shots.len() < MAX_SHOTS && self.count_ammo > 0 {
             self.shots.push(Shot::new(self.x, self.y - 1));
+
+            self.count_ammo -= 1;
             self.count_shot += 1;
+
             true
         } else {
             false
@@ -66,6 +72,7 @@ impl Player {
         for shot in self.shots.iter_mut() {
             if !shot.exploding && invaders.kill_invader_at(shot.x, shot.y) {
                 hit_smt = true;
+                self.count_ammo = min(MAX_AMMO, self.count_ammo + AMMO_RELOAD);
                 shot.explode();
             }
         }

@@ -50,8 +50,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         render::render(&mut stdout, &last_frame, &last_frame, 0, true);
 
-        while let Ok((current_frame, count_shot)) = render_rx.recv() {
-            render::render(&mut stdout, &last_frame, &current_frame, count_shot, false);
+        while let Ok((current_frame, count_ammo)) = render_rx.recv() {
+            render::render(&mut stdout, &last_frame, &current_frame, count_ammo, false);
             last_frame = current_frame;
         }
     });
@@ -80,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     KeyCode::Char(' ') | KeyCode::Enter => {
                         if player.shoot() {
                             audio.play("pew");
-                        } else if player.count_shot >= MAX_AMMO {
+                        } else if player.count_ammo == 0 {
                             audio.play("meow");
                         }
                     }
@@ -104,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             drawable.draw(&mut current_frame);
         }
 
-        let _ = render_tx.send((current_frame, player.count_shot));
+        let _ = render_tx.send((current_frame, player.count_ammo));
         thread::sleep(Duration::from_millis(1));
 
         // Win or Lose?

@@ -18,7 +18,7 @@ pub fn render(
     stdout: &mut Stdout,
     last_frame: &Frame,
     current_frame: &Frame,
-    count_shot: u32,
+    count_ammo: u32,
     force: bool,
 ) {
     if force {
@@ -38,7 +38,7 @@ pub fn render(
     // Render UI
     stdout.queue(MoveTo(NUM_COLS as u16 + 5, 4)).unwrap();
     clear(stdout, ClearType::UntilNewLine);
-    print!("  ammo: {} / 100  ", (MAX_AMMO - count_shot));
+    print!("  ammo: {} / {}  ", count_ammo , MAX_AMMO);
 
     // Flush
     stdout.flush().unwrap();
