@@ -1,24 +1,30 @@
-use crossterm::event::{Event, KeyCode};
 use crossterm::{
     cursor::{Hide, Show},
+    event::{self, Event, KeyCode},
+    terminal,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use crossterm::{event, terminal};
-use invaders::frame::{new_frame, Drawable};
-use invaders::invaders::Invaders;
-use invaders::player::{Player, MAX_AMMO};
-use invaders::{frame, render};
-use rusty_audio::Audio;
-use std::error::Error;
-use std::sync::mpsc;
-use std::time::{Duration, Instant};
-use std::{io, thread};
+
+use invaders::{
+    frame::{self, new_frame, Drawable},
+    invaders::Invaders,
+    player::{Player, MAX_AMMO},
+    render,
+};
+
+use std::{
+    error::Error,
+    io,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Watch out for the Invaders!");
 
-    let mut audio = Audio::new();
+    let mut audio = rusty_audio::Audio::new();
     audio.add("startup", "assets/sounds/startup.wav");
     audio.add("lose", "assets/sounds/lose.wav");
     audio.add("explode", "assets/sounds/explode.wav");
@@ -37,16 +43,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Render loop in a separate thread
     let (render_tx, render_rx) = mpsc::channel();
+
     let render_handle = thread::spawn(move || {
         let mut last_frame = frame::new_frame();
         let mut stdout = io::stdout();
-        render::render(&mut stdout, &last_frame, &last_frame, true);
-        loop {
-            let current_frame = match render_rx.recv() {
-                Ok(x) => x,
-                Err(_) => break,
-            };
-            render::render(&mut stdout, &last_frame, &current_frame, false);
+
+        render::render(&mut stdout, &last_frame, &last_frame, 0, true);
+
+        while let Ok((current_frame, count_shot)) = render_rx.recv() {
+            render::render(&mut stdout, &last_frame, &current_frame, count_shot, false);
             last_frame = current_frame;
         }
     });
@@ -99,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             drawable.draw(&mut current_frame);
         }
 
-        let _ = render_tx.send(current_frame);
+        let _ = render_tx.send((current_frame, player.count_shot));
         thread::sleep(Duration::from_millis(1));
 
         // Win or Lose?
