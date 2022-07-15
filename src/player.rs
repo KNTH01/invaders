@@ -1,5 +1,7 @@
 use std::{cmp::min, time::Duration};
 
+use rusty_time::timer::Timer;
+
 use crate::{
     frame::{Drawable, Frame},
     invaders::Invaders,
@@ -10,6 +12,7 @@ use crate::{
 pub const MAX_SHOTS: usize = 3;
 pub const MAX_AMMO: u32 = 5;
 pub const AMMO_RELOAD: u32 = 2;
+pub const AUTO_AMMO_RELOAD_DURATION: u32 = 3500;
 
 pub struct Player {
     x: usize,
@@ -17,6 +20,7 @@ pub struct Player {
     shots: Vec<Shot>,
     pub count_ammo: u32,
     pub count_shot: u32,
+    reload_ammo_timer: Timer,
 }
 
 impl Default for Player {
@@ -33,6 +37,7 @@ impl Player {
             shots: vec![],
             count_ammo: MAX_AMMO,
             count_shot: 0,
+            reload_ammo_timer: Timer::from_millis(AUTO_AMMO_RELOAD_DURATION as u64),
         }
     }
 
@@ -65,6 +70,12 @@ impl Player {
             shot.update(delta)
         }
         self.shots.retain(|shot| !shot.dead());
+
+        self.reload_ammo_timer.update(delta);
+        if self.reload_ammo_timer.ready {
+            self.reload_ammo_timer.reset();
+            self.count_ammo = Self::reload_ammo(self.count_ammo + 1);
+        }
     }
 
     pub fn detect_hits(&mut self, invaders: &mut Invaders) -> bool {
@@ -72,12 +83,16 @@ impl Player {
         for shot in self.shots.iter_mut() {
             if !shot.exploding && invaders.kill_invader_at(shot.x, shot.y) {
                 hit_smt = true;
-                self.count_ammo = min(MAX_AMMO, self.count_ammo + AMMO_RELOAD);
+                self.count_ammo = Self::reload_ammo(self.count_ammo + AMMO_RELOAD);
                 shot.explode();
             }
         }
 
         hit_smt
+    }
+
+    fn reload_ammo(count_ammo_reload: u32) -> u32 {
+        min(MAX_AMMO, count_ammo_reload)
     }
 }
 
