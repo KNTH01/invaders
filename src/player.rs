@@ -74,25 +74,31 @@ impl Player {
         self.reload_ammo_timer.update(delta);
         if self.reload_ammo_timer.ready {
             self.reload_ammo_timer.reset();
-            self.count_ammo = Self::reload_ammo(self.count_ammo + 1);
+            self.reload_ammo(1);
         }
     }
 
     pub fn detect_hits(&mut self, invaders: &mut Invaders) -> bool {
         let mut hit_smt = false;
+        let mut hit_count = 0;
+
         for shot in self.shots.iter_mut() {
             if !shot.exploding && invaders.kill_invader_at(shot.x, shot.y) {
                 hit_smt = true;
-                self.count_ammo = Self::reload_ammo(self.count_ammo + AMMO_RELOAD);
+                hit_count += 1;
                 shot.explode();
             }
+        }
+
+        for _ in 0..hit_count {
+            self.reload_ammo(AMMO_RELOAD);
         }
 
         hit_smt
     }
 
-    fn reload_ammo(count_ammo_reload: u32) -> u32 {
-        min(MAX_AMMO, count_ammo_reload)
+    fn reload_ammo(&mut self, ammo: u32) {
+        self.count_ammo = min(MAX_AMMO, self.count_ammo + ammo);
     }
 }
 

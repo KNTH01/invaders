@@ -9,7 +9,7 @@ use crossterm::{
 use invaders::{
     frame::{self, new_frame, Drawable},
     invaders::Invaders,
-    player::{Player, MAX_AMMO},
+    player::Player,
     render,
 };
 
